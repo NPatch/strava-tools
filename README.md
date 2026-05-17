@@ -1,6 +1,13 @@
 # strava-tools
 Tools for interacting with Strava server. Mainly adds ability to modify existing fit files from Strava sessions to add steps.
 
+## Context
+Strava, at one point, introduced per-month step challenges. Unfortunately for me, I'm using a Xiaomi Band 6 to record my walks
+and even though Xiaomi does have all the data, it produces a fit file which does not have any steps/cadence data. Hence, the 
+step counter of the challenge remains at - / #. This tool basically downloads the fit file sent to Strava, by Xiaomi, modifies
+it via FIT SDK to include, at the very least, the total steps of the activity itself. Then it deletes the previously created
+entry for the activity and uploads the corrected fit file.
+
 ## Usage
 ```
 strava-tools [command] [subcommand] [options]
