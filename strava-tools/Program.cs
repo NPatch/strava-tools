@@ -168,7 +168,7 @@ namespace StravaTools
                     case CLI.CommandType.FixRemote:
                         {
                             Log.Information($"Will add steps(#{CLI.ProvidedCommandData.Steps}) the remote activity #{CLI.ProvidedCommandData.ActivityID}");
-                            await FixRemoteActivity(client, CLI.ProvidedCommandData.ActivityID, CLI.ProvidedCommandData.Steps, FitHelper.FixLocalActivity, ctx.CancellationTokenSource);
+                            await StravaHelper.FixRemoteActivity(client, CLI.ProvidedCommandData.ActivityID, CLI.ProvidedCommandData.Steps, FitHelper.FixLocalActivity, ctx.CancellationTokenSource);
                         }
                         break;
                     case CLI.CommandType.DumpFit:
