@@ -17,7 +17,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace StravaTools
+namespace StravaTools.Helpers
 {
     public static class StravaHelper
     {
@@ -155,7 +155,7 @@ namespace StravaTools
                     return activities[0];
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return null;
             }
@@ -1106,7 +1106,7 @@ namespace StravaTools
                                 break;
                             }
                         }
-                        catch (Exception ex)
+                        catch (Exception)
                         {
                             deleted = true;
                             break;

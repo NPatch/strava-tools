@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading;
 using SysDateTime = System.DateTime;
 
-namespace StravaTools
+namespace StravaTools.Helpers
 {
     public static class FitHelper
     {
@@ -1925,7 +1925,7 @@ namespace StravaTools
                 FitMessages fitMessages = Decode(file);
                 return true;
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 return false;
             }

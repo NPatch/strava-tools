@@ -264,9 +264,8 @@ namespace StravaTools.Utilities.CommandLine
                             result.AddError($"Invalid characters in filepath: {path[invalidCharactersIndex]}");
                         }
                         else if (invalidCharactersIndex < 0
-                                && non_rooted_path != null && non_rooted_path.Length > 0)
+                                && non_rooted_path != ReadOnlySpan<char>.Empty && non_rooted_path.Length > 0)
                         {
-                            Span<Range> spans = new Span<Range>();
                             char[] separators = new char[]
                             {
                                 Path.DirectorySeparatorChar,
