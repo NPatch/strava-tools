@@ -1294,5 +1294,36 @@ namespace StravaTools.Helpers
                 Backup = null
             };
         }
+
+        public static async Task FixRemoteActivity(StravaClient client, long activity_id, int steps, Action<FileInfo, int, CancellationTokenSource> ModificationCallback, CancellationTokenSource cancellation_source = default)
+        {
+            Log.Information($"Fixing activity {activity_id}");
+            try
+            {
+                cancellation_source.Token.ThrowIfCancellationRequested();
+                DownloadedFit files = await DownloadActivity(client, activity_id, cancellation_source.Token);
+                if (!files.Main.Exists)
+                {
+                    files.Backup.CopyTo(files.Main.FullName);
+                }
+                cancellation_source.Token.ThrowIfCancellationRequested();
+                ModificationCallback(files.Main, steps, cancellation_source);
+                cancellation_source.Token.ThrowIfCancellationRequested();
+                await DeleteActivity(client, activity_id, cancellation_source.Token);
+                cancellation_source.Token.ThrowIfCancellationRequested();
+                Log.Information("Waiting for 4sec to allow system to flush the delete.");
+                await Task.Delay(4000);
+                cancellation_source.Token.ThrowIfCancellationRequested();
+                await UploadActivity(client, files.Main, cancellation_source.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"Exception in FixRemoteActivity Message: " + ex.Message);
+            }
+        }
     }
 }

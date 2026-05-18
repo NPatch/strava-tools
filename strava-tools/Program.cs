@@ -168,7 +168,7 @@ namespace StravaTools
                     case CLI.CommandType.FixRemote:
                         {
                             Log.Information($"Will add steps(#{CLI.ProvidedCommandData.Steps}) the remote activity #{CLI.ProvidedCommandData.ActivityID}");
-                            await FixRemoteActivity(client, CLI.ProvidedCommandData.ActivityID, CLI.ProvidedCommandData.Steps, ctx.CancellationTokenSource);
+                            await FixRemoteActivity(client, CLI.ProvidedCommandData.ActivityID, CLI.ProvidedCommandData.Steps, FitHelper.FixLocalActivity, ctx.CancellationTokenSource);
                         }
                         break;
                     case CLI.CommandType.DumpFit:
@@ -192,37 +192,6 @@ namespace StravaTools
             catch (Exception)
             {
                 Console.ReadKey();
-            }
-        }
-
-        public static async Task FixRemoteActivity(StravaClient client, long activity_id, int steps, CancellationTokenSource cancellation_source)
-        {
-            Log.Information($"Fixing activity {activity_id}");
-            try
-            {
-                cancellation_source.Token.ThrowIfCancellationRequested();
-                StravaHelper.DownloadedFit files = await StravaHelper.DownloadActivity(client, activity_id, cancellation_source.Token);
-                if (!files.Main.Exists)
-                {
-                    files.Backup.CopyTo(files.Main.FullName);
-                }
-                cancellation_source.Token.ThrowIfCancellationRequested();
-                FitHelper.FixLocalActivity(files.Main, steps, cancellation_source);
-                cancellation_source.Token.ThrowIfCancellationRequested();
-                await StravaHelper.DeleteActivity(client, activity_id, cancellation_source.Token);
-                cancellation_source.Token.ThrowIfCancellationRequested();
-                Log.Information("Waiting for 4sec to allow system to flush the delete.");
-                await Task.Delay(4000);
-                cancellation_source.Token.ThrowIfCancellationRequested();
-                await StravaHelper.UploadActivity(client, files.Main, cancellation_source.Token);
-            }
-            catch (OperationCanceledException)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                Log.Error($"Exception in FixRemoteActivity Message: " + ex.Message);
             }
         }
     }
