@@ -776,7 +776,7 @@ namespace StravaTools
         public static string GetFilenameFromSummary(ActivitySummary summary)
         {
             DateTime local_dt = DateTime.Parse(summary.StartDate);
-            string filename = string.Format($"{local_dt.ToString("dd_MM_yyyy_hh_mm")}_{summary.Name}.fit");
+            string filename = string.Format($"{local_dt.ToString("yyyy_MM_dd_hh_mm")}_{summary.Name}.fit");
             return filename;
         }
 
