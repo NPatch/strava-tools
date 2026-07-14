@@ -10,6 +10,7 @@ using StravaTools.Utilities.Browser;
 using StravaTools.Utilities.Configuration;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Net;
 using System.Net.Http;
@@ -780,15 +781,291 @@ namespace StravaTools.Helpers
             return filename;
         }
 
-        public static async Task<DownloadedFit> DownloadOriginalFit(ActivitySummary activity_summary, CancellationToken token = default)
+        private static readonly string[] StravaHtmlDateTimeFormats =
         {
-            string filename = GetFilenameFromSummary(activity_summary);
+            "h:mm tt 'on' dddd, MMMM d, yyyy",
+            "h:mm tt 'on' dddd, MMMM dd, yyyy"
+        };
 
-            DateTime time_created = DateTime.Parse(activity_summary.StartDate);
+        public static DateTime GetDateTimeFromActivityPage(string dt_str)
+        {
+            return DateTime.ParseExact(
+                dt_str.Trim(' '),
+                StravaHtmlDateTimeFormats,
+                CultureInfo.InvariantCulture,
+                DateTimeStyles.None
+            );
+        }
+
+        public static string GetFilenameFromHtmlInput(string activity_name, DateTime activity_start)
+        {
+            string filename = string.Format($"{activity_start.ToString("yyyy_MM_dd_hh_mm")}_{activity_name}.fit");
+            return filename;
+        }
+
+        public static async Task<string> GetActivityInBrowser(long activity_id, CancellationToken token = default)
+        {
+            Url activity_uri = ConstructStravaUri(
+                    $"activities/{activity_id}"
+                );
+
+            CookieParam[] cookie_params = strava_cookies;
+
+            //if (cookie_params == null
+            //        || cookie_params.Length == 0
+            //        || ShouldUpdateForExpiry(cookie_params))
+            //{
+            //    await RefreshCookies(token);
+            //}
+
+            token.ThrowIfCancellationRequested();
+
+            string html_activity_content = "";
+            //IBrowser browser = null;
+            //string csrfValue = "";
+            //try
+            //{
+            //    token.ThrowIfCancellationRequested();
+            //    browser = await BrowserUtilities.LaunchOrConnect(headless: true, full_viewport: true);
+            //    var pages = await browser.PagesAsync();
+            //    var page = pages[0];
+
+            //    token.ThrowIfCancellationRequested();
+
+            //    if (cookie_params != null)
+            //    {
+            //        await page.SetCookieAsync(cookie_params);
+            //    }
+
+            //    await page.GoToAsync(activity_uri.ToString());
+
+            //    try
+            //    {
+            //        IElementHandle element = await page.QuerySelectorAsync("meta[name=\"csrf-token\"]");
+            //        IJSHandle csrf = await element.GetPropertyAsync("content");
+            //        csrfValue = await csrf.JsonValueAsync<string>();
+            //    }
+            //    catch (TimeoutException) { }
+
+            //    token.ThrowIfCancellationRequested();
+            //}
+            //catch (OperationCanceledException)
+            //{
+            //    Log.Error("User cancelled.");
+            //}
+            //catch (Exception ex)
+            //{
+            //    Log.Error(ex.ToString());
+            //}
+            //finally
+            //{
+            //    await BrowserUtilities.ShutdownBrowser(browser);
+            //    Log.Debug("Cleanup complete. Exiting.");
+            //}
+
+            //if (!string.IsNullOrEmpty(csrfValue))
+            {
+                //string payload = $"_method=delete&authenticity_token={csrfValue}";
+
+
+                // Create an HttpClientHandler object and set to use default credentials
+                HttpClientHandler handler = new HttpClientHandler();
+                //handler.AllowAutoRedirect = false;
+                handler.UseCookies = true;
+                string cookie_header = "";
+                {//Setting cookies on handler and creating the cookie header string
+                    for (int i = 0; i < cookie_params.Length; i++)
+                    {
+                        CookieParam cp = cookie_params[i];
+                        if (i > 0)
+                        {
+                            cookie_header += ";";
+                        }
+                        cookie_header += $"{cp.Name}={cp.Value}";
+                        handler.CookieContainer.Add(new Cookie()
+                        {
+                            Domain = cp.Domain,
+                            Path = cp.Path,
+                            Expires = CommonUtilities.GetTimestamp((long)cp.Expires),
+                            HttpOnly = cp.HttpOnly.Value,
+                            Value = cp.Value,
+                            Secure = cp.SourceScheme.Value == CookieSourceScheme.Secure,
+                            Name = cp.Name,
+                            Expired = CommonUtilities.GetTimestamp((long)cp.Expires) < DateTime.UtcNow,
+                            Version = 1
+                        });
+                    }
+                    cookie_header.Remove(cookie_header.Length - 1);
+                }
+
+                // Create an HttpClient object
+                HttpClient sharedClient = new(handler)
+                {
+                    BaseAddress = new Uri(baseUrl),
+                };
+
+                sharedClient.DefaultRequestHeaders.Remove("User-Agent");
+
+                try
+                {
+                    HttpRequestMessage activity_get_request = new HttpRequestMessage()
+                    {
+                        RequestUri = new Uri($"activities/{activity_id}", UriKind.Relative),
+                        Method = HttpMethod.Post,
+                    };
+
+                    activity_get_request.Headers.Add("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7");
+                    activity_get_request.Headers.Add("Accept-Encoding", "gzip, deflate, br, zstd");
+                    activity_get_request.Headers.Add("Accept-Language", "en-US,en;q=0.9");
+                    activity_get_request.Headers.Add("Connection", "keep-alive");
+                    activity_get_request.Headers.Add("Cookie", cookie_header);
+                    //delete_request.Headers.Add("Content-Length", formContent.);
+                    //delete_request.Headers.Add("Content-Type", "application/x-www-form-urlencoded");
+                    activity_get_request.Headers.Add("Host", "www.strava.com");
+                    //fit_file_request.Headers.Add("Authorization", $"Bearer {WorkContext.AccessToken}");
+                    activity_get_request.Headers.Add("Origin", "https://www.strava.com");
+                    activity_get_request.Headers.Add("Priority", "u=0, i");
+                    activity_get_request.Headers.Add("Sec-Fetch-Dest", "document");
+                    activity_get_request.Headers.Add("Sec-Fetch-Mode", "navigate");
+                    activity_get_request.Headers.Add("Sec-Fetch-Site", "same-origin");
+                    activity_get_request.Headers.Add("Sec-Fetch-User", "?1");
+                    activity_get_request.Headers.Add("Upgrade-Insecure-Requests", "1");
+                    activity_get_request.Headers.Add("TE", "trailers");
+                    activity_get_request.Headers.Add("Referer", Url.Combine(baseUrl, "athlete/training"));
+                    activity_get_request.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:148.0) Gecko/20100101 Firefox/148.0");
+
+                    HttpResponseMessage activity_get_response = await sharedClient.SendAsync(activity_get_request
+                        , HttpCompletionOption.ResponseContentRead
+                        , token);
+                    activity_get_response.EnsureSuccessStatusCode();
+
+                    byte[] bytes = await activity_get_response.Content.ReadAsByteArrayAsync(token);
+
+                    html_activity_content = Encoding.UTF8.GetString(bytes);
+
+                    //Console.WriteLine($"{jsonResponse}\n");
+                    token.ThrowIfCancellationRequested();
+                    //Console.WriteLine($"Access:{WorkContext.AccessToken}   Refresh:{WorkContext.RefreshToken} Expires:{WorkContext.TokensExpiryDate.ToLocalTime().ToString()}"); 
+                    activity_get_response.Dispose();
+
+
+                }
+                catch (Exception e)
+                {
+                    Console.Error.WriteLine(e);
+                }
+                finally
+                {
+                    sharedClient.Dispose();
+                }
+
+                return html_activity_content;
+            }
+        }
+
+        public struct ActivityInfo
+        {
+            public string ActivityName {get;set;}
+            public DateTime ActivityStart { get; set; }
+        }
+
+        public static async Task<ActivityInfo> GetActivityInBrowser2(long activity_id, CancellationToken token = default)
+        {
+            Url activity_uri = ConstructStravaUri(
+                    $"activities/{activity_id}"
+                );
+
+            CookieParam[] cookie_params = strava_cookies;
+
+            //if (cookie_params == null
+            //        || cookie_params.Length == 0
+            //        || ShouldUpdateForExpiry(cookie_params))
+            //{
+            //    await RefreshCookies(token);
+            //}
+
+            token.ThrowIfCancellationRequested();
+           
+            IBrowser browser = null;
+
+            string activity_name = "";
+            DateTime activity_date = DateTime.MinValue;
+
+            try
+            {
+                token.ThrowIfCancellationRequested();
+                browser = await BrowserUtilities.LaunchOrConnect(headless: true, full_viewport: true);
+                var pages = await browser.PagesAsync();
+                var page = pages[0];
+
+                token.ThrowIfCancellationRequested();
+
+                if (cookie_params != null)
+                {
+                    await page.SetCookieAsync(cookie_params);
+                }
+
+                await page.GoToAsync(activity_uri.ToString());
+
+                try
+                {
+                    {
+                        IElementHandle element = await page.QuerySelectorAsync("time");
+                        string dt_str = await element.EvaluateFunctionAsync<string>("el => el.innerText");
+                        activity_date = GetDateTimeFromActivityPage(dt_str);
+                    }
+                    {
+                        IElementHandle element = await page.QuerySelectorAsync("h1[class=\"text-title1 marginless activity-name\"]");
+                        activity_name = await element.EvaluateFunctionAsync<string>("el => el.innerText");
+                    }
+                }
+                catch (TimeoutException) { }
+
+                token.ThrowIfCancellationRequested();
+            }
+            catch (OperationCanceledException)
+            {
+                Log.Error("User cancelled.");
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex.ToString());
+            }
+            finally
+            {
+                await BrowserUtilities.ShutdownBrowser(browser);
+                Log.Debug("Cleanup complete. Exiting.");
+            }
+
+            return new ActivityInfo()
+            {
+                ActivityName = activity_name,
+                ActivityStart = activity_date
+            };
+        }
+
+        public static async Task<DownloadedFit> DownloadOriginalFit(long activity_id, CancellationToken token = default)
+        {
+            //filename
+            //id
+            //startdate
+
+            //< time >
+            //8:29 PM on Saturday, July 11, 2026
+            //</ time >
+            //< span class='location'>Heraklion Municipal Unit, Region of Crete</span>
+            //<h1 class='text-title1 marginless activity-name'>Evening Walk</h1>
+
+
+            ActivityInfo acinfo = await GetActivityInBrowser2(activity_id, token);
+
+            string filename = GetFilenameFromHtmlInput(acinfo.ActivityName, acinfo.ActivityStart);
+
+            DateTime time_created = acinfo.ActivityStart;
 
             byte[] bytes = null;
             Url download_original_uri = ConstructRelativeUri(
-                    $"activities/{activity_summary.Id}/export_original"
+                    $"activities/{activity_id}/export_original"
                 );
 
             CookieParam[] cookie_params = strava_cookies;
@@ -1242,7 +1519,7 @@ namespace StravaTools.Helpers
                             ActivitySummary summary = summaries[i];
                             current_activity_id = summary.Id;
                             Log.Information($"Downloading original fit file for activity #{summary.Id}");
-                            DownloadedFit f = await DownloadOriginalFit(summary, token);
+                            DownloadedFit f = await DownloadOriginalFit(current_activity_id, token);
                         }
                         token.ThrowIfCancellationRequested();
                         summaries = client.Activities.GetActivities(start, end, page_index, 20);
@@ -1266,17 +1543,18 @@ namespace StravaTools.Helpers
             {
                 {//Find Activity
                     token.ThrowIfCancellationRequested();
-                    Log.Information($"Looking up activity #{activity_id}");
-                    Activity existing_activity = await client.Activities.GetActivityAsync(activity_id.ToString(), false);
-                    token.ThrowIfCancellationRequested();
-                    if (existing_activity != null)
-                    {
-                        Log.Information($"Found activity #{activity_id}");
+                    DownloadedFit f = await DownloadOriginalFit(activity_id, token);
+                    //Log.Information($"Looking up activity #{activity_id}");
+                    //Activity existing_activity = await client.Activities.GetActivityAsync(activity_id.ToString(), false);
+                    //token.ThrowIfCancellationRequested();
+                    //if (existing_activity != null)
+                    //{
+                    //    Log.Information($"Found activity #{activity_id}");
 
-                        Log.Information($"Downloading original fit file for activity #{activity_id}");
-                        DownloadedFit f = await DownloadOriginalFit(existing_activity, token);
-                        return f;
-                    }
+                    //    Log.Information($"Downloading original fit file for activity #{activity_id}");
+                        
+                    //    return f;
+                    //}
                 }
             }
             catch (OperationCanceledException)

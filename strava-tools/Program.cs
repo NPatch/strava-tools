@@ -110,7 +110,7 @@ namespace StravaTools
                     //Making sure the RangeStart is valid for subsequent calls.
                     if (CLI.ProvidedCommandData.RangeStart == SysDateTime.MinValue)
                     {
-                        Athlete me = client.Athletes.GetAthlete();
+                        //Athlete me = client.Athletes.GetAthlete();
 
                         CLI.ProvidedCommandData = new CLI.CommandResult()
                         {
@@ -118,7 +118,7 @@ namespace StravaTools
                             Filename = CLI.ProvidedCommandData.Filename,
                             EntriesNum = CLI.ProvidedCommandData.EntriesNum,
                             Steps = CLI.ProvidedCommandData.Steps,
-                            RangeStart = SysDateTime.Parse(me.CreatedAt),
+                            RangeStart = SysDateTime.Parse("2022-12-29 14:28"), //20min before first activity
                             RangeEnd = CLI.ProvidedCommandData.RangeEnd
                         };
                     }
@@ -189,8 +189,9 @@ namespace StravaTools
             {
 
             }
-            catch (Exception)
+            catch (Exception e)
             {
+                Log.Error(e.ToString());
                 Console.ReadKey();
             }
         }
