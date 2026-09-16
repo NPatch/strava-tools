@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "strava-tools", "strava-tool
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "strava-tools-lib", "strava-tools-lib\strava-tools-lib.csproj", "{10A6C04D-34E8-4B18-BF89-A928DB0A7772}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "interactive-cli-menu", "interactive-cli-menu\interactive-cli-menu.csproj", "{CC5D610B-26AE-4F88-AE2F-A676453C3794}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -31,6 +33,14 @@ Global
 		{10A6C04D-34E8-4B18-BF89-A928DB0A7772}.Release|Any CPU.Build.0 = Release|Any CPU
 		{10A6C04D-34E8-4B18-BF89-A928DB0A7772}.Release|x64.ActiveCfg = Release|Any CPU
 		{10A6C04D-34E8-4B18-BF89-A928DB0A7772}.Release|x64.Build.0 = Release|Any CPU
+		{CC5D610B-26AE-4F88-AE2F-A676453C3794}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CC5D610B-26AE-4F88-AE2F-A676453C3794}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CC5D610B-26AE-4F88-AE2F-A676453C3794}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{CC5D610B-26AE-4F88-AE2F-A676453C3794}.Debug|x64.Build.0 = Debug|Any CPU
+		{CC5D610B-26AE-4F88-AE2F-A676453C3794}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CC5D610B-26AE-4F88-AE2F-A676453C3794}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CC5D610B-26AE-4F88-AE2F-A676453C3794}.Release|x64.ActiveCfg = Release|Any CPU
+		{CC5D610B-26AE-4F88-AE2F-A676453C3794}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
