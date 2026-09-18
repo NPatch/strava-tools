@@ -28,6 +28,164 @@ namespace interactive_cli_menu
         public abstract void Show();
     }
 
+    internal class DownloadMenu : UIMenu
+    {
+        internal DownloadMenu()
+        {
+            ListActivitiesMenu lam = new ListActivitiesMenu()
+            {
+                Title = "Download Menu",
+                ctx = ctx
+            };
+
+            ctx.menu_stack.Push(lam);
+        }
+
+
+        private void DownloadRemote(long activity_id)
+        {
+            AnsiConsole.Status()
+                .Start($"Downloading remote activity {activity_id}", ctx =>
+                {
+                    // Simulate grinding
+                    Thread.Sleep(5000);
+                });
+        }
+
+        private long SelectActivityFromRemote()
+        {
+            long[] activity_ids = new long[]
+            {
+                Random.Shared.Next(170000000, 190000000),
+                Random.Shared.Next(170000000, 190000000),
+                Random.Shared.Next(170000000, 190000000),
+                Random.Shared.Next(170000000, 190000000),
+                Random.Shared.Next(170000000, 190000000),
+                Random.Shared.Next(170000000, 190000000),
+                0
+            };
+            SelectionPrompt<long> selection = new SelectionPrompt<long>()
+                                                        .Title("Select activity from Strava:")
+                                                        .AddChoices(activity_ids);
+
+            selection.UseConverter(x => (x != 0l) ? x.ToString() : "Back");
+
+            long choice = AnsiConsole.Prompt(selection);
+
+            return choice;
+        }
+
+        private DirectoryInfo GetLocalSubDir(string folder)
+        {
+            string user_dir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            string backups_dir = Path.Combine(user_dir, @"AppData\Local\strava-tools\Backups");
+            return new DirectoryInfo(Path.Combine(backups_dir, folder));
+        }
+
+        public override void Show()
+        {
+            
+        }
+    }
+
+    internal class DumpMenu : UIMenu
+    {
+        private void DumpLocal(FileInfo fi)
+        {
+            AnsiConsole.Status()
+                .Start($"Dumping local activity {fi.FullName}", ctx =>
+                {
+                    // Simulate grinding
+                    Thread.Sleep(5000);
+                });
+            RequestBacktrack = true;
+        }
+
+        void FixLocalMenu()
+        {
+            string choice = AnsiConsole.Prompt(
+                        new SelectionPrompt<string>()
+                            .Title("Fix Local menu")
+                            .AddCancelResult("Cancel")
+                            .AddChoices("Original", "Modified", "Custom", "Back"));
+
+            FileInfo fi = null;
+            switch (choice)
+            {
+                case "Original":
+                    {
+                        DirectoryInfo dir = GetLocalSubDir("Original");
+                        fi = SelectFileFromDirectory(dir);
+                    }
+                    break;
+                case "Modified":
+                    {
+                        DirectoryInfo dir = GetLocalSubDir("Modified");
+                        fi = SelectFileFromDirectory(dir);
+                    }
+                    break;
+                case "Custom":
+                    {
+                        //
+                    }
+                    break;
+                default:
+                    RequestBacktrack = true;
+                    return;
+            }
+
+            if (fi != null)
+            {
+                DumpLocal(fi);
+            }
+            else
+            {
+                RequestBacktrack = true;
+                return;
+            }
+        }
+
+        private FileInfo SelectFileFromDirectory(DirectoryInfo dir)
+        {
+            FileInfo[] fit_files = dir.GetFiles("*.fit", SearchOption.TopDirectoryOnly);
+            SelectionPrompt<FileInfo> selection = new SelectionPrompt<FileInfo>()
+                                                        .Title("Select file from directory:")
+                                                        .AddChoices(fit_files)
+                                                        .PageSize(10)
+                                                        .WrapAround()
+                                                        .EnableSearch()
+                                                        .AddCancelResult((FileInfo)null!);
+
+            selection.AddChoice(null);
+
+            selection.UseConverter(x => (x != null) ? x.FullName : "Back");
+
+            selection.SearchHighlightStyle = new Style(Color.Yellow, decoration: Decoration.Underline | Decoration.Bold);
+
+
+            FileInfo choice = AnsiConsole.Prompt(selection);
+
+            if (choice == null)
+            {
+                return null!;
+            }
+
+            return choice;
+        }
+
+        private DirectoryInfo GetLocalSubDir(string folder)
+        {
+            string user_dir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            string backups_dir = Path.Combine(user_dir, @"AppData\Local\strava-tools\Backups");
+            return new DirectoryInfo(Path.Combine(backups_dir, folder));
+        }
+
+        public override void Show()
+        {
+            FixLocalMenu();
+        }
+    }
+
     internal class FixMenu : UIMenu
     {
         private void FixRemote(long activity_id)
@@ -209,6 +367,11 @@ namespace interactive_cli_menu
                         ctx.fix_queue.Remove(activity_id);
                     }
                     break;
+                case "Cancel":
+                    {
+                        
+                    }
+                    break;
             }
         }
 
@@ -220,6 +383,7 @@ namespace interactive_cli_menu
             {
                 query_type = AnsiConsole.Prompt<QueryType>(new SelectionPrompt<QueryType>()
                                 .Title("Query Type")
+                                .AddCancelResult(QueryType.UNKNOWN)
                                 .UseConverter(x => ((x == QueryType.UNKNOWN) ? "Back" : x.ToString()))
                                 .AddChoices(new QueryType[] { QueryType.LAST_COUNT, QueryType.DATE_RANGE, QueryType.UNKNOWN }));
             }
@@ -242,7 +406,9 @@ namespace interactive_cli_menu
                     break;
                 case QueryType.DATE_RANGE:
                     {
-                        ctx.date_range = AnsiConsole.Prompt(new CalendarRangePrompt(DateTime.Now));
+                        CalendarRangePrompt calendar_prompt = new CalendarRangePrompt(DateTime.Now);
+                        calendar_prompt.AddCancelResult(DateRange.Empty);
+                        ctx.date_range = AnsiConsole.Prompt(calendar_prompt);
                         if (ctx.date_range.Start != DateTime.MinValue
                             && ctx.date_range.End != DateTime.MinValue)
                         {
@@ -261,6 +427,11 @@ namespace interactive_cli_menu
                                 choices.Add($"{dt.ToString()} {((is_queued) ? "Queued" : "")}");
                             }
                         }
+                        else
+                        {
+                            RequestBacktrack = true;
+                            return;
+                        }
                     }
                     break;
                 default:
@@ -272,7 +443,8 @@ namespace interactive_cli_menu
             SelectionPrompt<string> activity_menu_selection
                 = new SelectionPrompt<string>()
                             .Title("Activities menu")
-                            .AddChoices(choices);
+                            .AddChoices(choices)
+                            .AddCancelResult("Cancel");
 
             string activity_choice = "";
             do
@@ -288,7 +460,8 @@ namespace interactive_cli_menu
                 activity_choice = AnsiConsole.Prompt(
                         activity_menu_selection);
 
-                if (activity_choice == "Back")
+                if (activity_choice == "Back"
+                    || activity_choice == "Cancel")
                 {
                     RequestBacktrack = true;
                     break;
@@ -332,12 +505,24 @@ namespace interactive_cli_menu
                     break;
                 case "Download":
                     {
+                        DownloadMenu dm = new DownloadMenu()
+                        {
+                            Title = "Download Menu",
+                            ctx = ctx,
+                        };
 
+                        ctx.menu_stack.Push(dm);
                     }
                     break;
                 case "Dump":
                     {
+                        DumpMenu dm = new DumpMenu()
+                        {
+                            Title = "Dump Menu",
+                            ctx = ctx
+                        };
 
+                        ctx.menu_stack.Push(dm);
                     }
                     break;
                 case "List":
