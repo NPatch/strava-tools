@@ -1,5 +1,7 @@
 ﻿using Spectre.Console;
 using SpectreConsoleExtensions;
+using System.Diagnostics;
+using System.Reflection.Metadata;
 using static interactive_cli_menu.Program;
 
 namespace interactive_cli_menu
@@ -30,8 +32,10 @@ namespace interactive_cli_menu
 
     internal class DownloadMenu : UIMenu
     {
-        internal DownloadMenu()
+        internal DownloadMenu(UIContext _ctx)
         {
+            ctx = _ctx;
+            ctx.menu_stack.Push(this);
             ListActivitiesMenu lam = new ListActivitiesMenu()
             {
                 Title = "Download Menu",
@@ -84,7 +88,36 @@ namespace interactive_cli_menu
 
         public override void Show()
         {
-            
+            AnsiConsole.Clear();
+            if (ctx.fix_queue.Count > 0)
+            {
+                AnsiConsole.MarkupLine($"[green]THe following activities are selected:[/]");
+                foreach (string id in ctx.fix_queue)
+                {
+                    AnsiConsole.WriteLine($" - {id}");
+                }
+
+                bool confirmed = AnsiConsole.Confirm($"[green]Are you sure you want to?[/]:");
+                if (confirmed)
+                {
+                    AnsiConsole.Status()
+                    .Start($"Downloading remote activities", ctx =>
+                    {
+                        foreach (string id in this.ctx.fix_queue)
+                        {
+                            ctx.Status($"Downloading [green]{id}[/]");
+                            // Simulate grinding
+                            Thread.Sleep(2000);
+                        }
+
+                        ctx.Status($"[green]Finished downloading![/]");
+                        // Simulate grinding
+                        Thread.Sleep(5000);
+                    });
+
+                }
+                RequestBacktrack = true;
+            }
         }
     }
 
@@ -505,13 +538,12 @@ namespace interactive_cli_menu
                     break;
                 case "Download":
                     {
-                        DownloadMenu dm = new DownloadMenu()
+                        DownloadMenu dm = new DownloadMenu(ctx)
                         {
                             Title = "Download Menu",
-                            ctx = ctx,
                         };
 
-                        ctx.menu_stack.Push(dm);
+                        //ctx.menu_stack.Push(dm);
                     }
                     break;
                 case "Dump":
