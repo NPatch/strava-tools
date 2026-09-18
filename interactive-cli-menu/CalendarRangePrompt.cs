@@ -1,5 +1,6 @@
 ﻿using Spectre.Console;
-using Spectre.Console.Rendering;
+
+using DateRange = SpectreConsoleExtensions.DateRange;
 
 namespace SpectreConsoleExtensions
 {
@@ -10,6 +11,11 @@ namespace SpectreConsoleExtensions
         DateTime cursor = DateTime.Today;
         DateTime? start = null;
         DateTime? end = null;
+
+        /// <summary>
+        /// Gets or sets a Func that will be triggered if Cancel is triggered by the 'ESC' key.
+        /// </summary>
+        public Func<DateRange>? CancelResult { get; set; }
 
         public CalendarRangePrompt(int year, int month)
         {
@@ -122,9 +128,11 @@ namespace SpectreConsoleExtensions
                         break;
 
                     case ConsoleKey.Escape:
-                        throw new OperationCanceledException(
-                            "Calendar range selection cancelled."
-                        );
+                        if (CancelResult != null)
+                        {
+                            return CancelResult.Invoke();
+                        }
+                        break;
                 }
 
                 await Task.Yield();
@@ -203,5 +211,7 @@ namespace SpectreConsoleExtensions
 
             return (x, y);
         }
+
+        
     }
 }

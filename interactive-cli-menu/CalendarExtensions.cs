@@ -1,8 +1,5 @@
 ﻿using Spectre.Console;
 using Spectre.Console.Rendering;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace SpectreConsoleExtensions
 {
@@ -22,6 +19,8 @@ namespace SpectreConsoleExtensions
             Start = start;
             End = end;
         }
+
+        public static DateRange Empty { get; } = new DateRange();
     }
 
     public static class CalendarExtensions
@@ -30,6 +29,38 @@ namespace SpectreConsoleExtensions
         {
             var picker = new CalendarRangePicker(console, calendar);
             return picker.Run();
+        }
+    }
+
+    public static class CalendarRangePromptExtensions
+    {
+        /// <summary>
+        /// Sets the value that will be returned if the prompt is cancelled with 'ESC'.
+        /// </summary>
+        /// <typeparam name="T">The prompt result type.</typeparam>
+        /// <param name="obj">The prompt.</param>
+        /// <param name="cancelResultFunc">A Func that is returning a value on cancel.</param>
+        /// <returns>The same instance so that multiple calls can be chained.</returns>
+        public static CalendarRangePrompt AddCancelResult(this CalendarRangePrompt obj, Func<DateRange> cancelResultFunc)
+        {
+            ArgumentNullException.ThrowIfNull(obj);
+
+            obj.CancelResult = cancelResultFunc;
+            return obj;
+        }
+
+        /// <summary>
+        /// Sets a Func that will be triggered if the prompt is cancelled with 'ESC'.
+        /// </summary>
+        /// <typeparam name="T">The prompt result type.</typeparam>
+        /// <param name="obj">The prompt.</param>
+        /// <param name="cancelResult">The value to be returned on cancel.</param>
+        /// <returns>The same instance so that multiple calls can be chained.</returns>
+        public static CalendarRangePrompt AddCancelResult(this CalendarRangePrompt obj, DateRange cancelResult)
+        {
+            ArgumentNullException.ThrowIfNull(obj);
+
+            return obj.AddCancelResult(() => cancelResult);
         }
     }
 
